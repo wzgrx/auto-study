@@ -20,23 +20,27 @@
 
 ---
 
-## 最终 14 个模块（按构建顺序编号）
+## 最终 18 个模块（按构建顺序编号）
 
 ```
- 1  config.py      配置管理
- 2  logger.py      日志系统
- 3  exceptions.py  异常+重试
- 4  brain.py       基础能力层（核心大脑）
- 5  anti_detect.py 反检测层
- 6  persistence.py 持久化层
- 7  login.py       万能登录层
- 8  scanner.py     课程识别层
- 9  player.py      视频播放层
-10  quiz.py        答题模块
-11  plugin.py      站点插件体系
-12  progress.py    进度管理层
-13  reporter.py    报告层
-14  scheduler.py   调度引擎
+ 1  config.py       配置管理
+ 2  tab_manager.py  标签页管理器 🔥新增
+ 3  logger.py       日志系统
+ 4  exceptions.py   异常+重试
+ 5  brain.py        基础能力层（核心大脑）
+ 6  anti_detect.py  反检测层
+ 7  persistence.py  持久化层
+ 8  captcha.py      验证码处理
+ 9  login.py        万能登录层
+10  scanner.py      课程识别层
+11  player.py       视频播放层
+12  quiz.py         答题模块
+13  notifier.py     通知模块
+14  health.py       健康监控
+15  plugin.py       站点插件体系
+16  progress.py     进度管理层
+17  reporter.py     报告层
+18  scheduler.py    调度引擎
 ```
 
 编号按**构建顺序**排列：从底层到上层，先写基础能力再写业务。
@@ -44,19 +48,23 @@
 | 编号 | 模块 | 一句话 | 先写原因 |
 |------|------|--------|---------|
 | **1** | config.py | 所有配置集中管理 | 其他模块都依赖它 |
-| **2** | logger.py | 统一日志 | 写代码时就要日志 |
-| **3** | exceptions.py | 异常分类+重试装饰器 | 错误处理的基础 |
-| **4** | brain.py | 核心大脑，所有操作的基础 | 所有业务模块都依赖它 |
-| **5** | anti_detect.py | 防检测措施 | 不依赖其他业务模块 |
-| **6** | persistence.py | 持久化 | 不依赖其他业务模块 |
-| **7** | login.py | 万能登录 | 依赖 brain |
-| **8** | scanner.py | 课程识别 | 依赖 brain |
-| **9** | player.py | 视频播放 | 依赖 brain + anti_detect |
-| **10** | quiz.py | 自动答题 | 依赖 brain |
-| **11** | plugin.py | 站点插件体系 | 依赖 brain |
-| **12** | progress.py | 进度管理 | 独立 |
-| **13** | reporter.py | 报告输出 | 独立 |
-| **14** | scheduler.py | 调度引擎 | 依赖上面所有 |
+| **2** | tab_manager.py | 3固定标签页管理 | 连接浏览器的基础 |
+| **3** | logger.py | 统一日志 | 写代码时就要日志 |
+| **4** | exceptions.py | 异常分类+重试装饰器 | 错误处理的基础 |
+| **5** | brain.py | 核心大脑，所有操作的基础 | 所有业务模块都依赖它 |
+| **6** | anti_detect.py | 防检测措施 | 不依赖其他业务模块 |
+| **7** | persistence.py | 持久化 | 不依赖其他业务模块 |
+| **8** | captcha.py | 验证码处理 | 独立 |
+| **9** | login.py | 万能登录 | 依赖 brain |
+| **10** | scanner.py | 课程识别 | 依赖 brain |
+| **11** | player.py | 视频播放 | 依赖 brain + anti_detect |
+| **12** | quiz.py | 自动答题 | 依赖 brain |
+| **13** | notifier.py | 通知推送 | 独立 |
+| **14** | health.py | 健康监控 | 独立 |
+| **15** | plugin.py | 站点插件体系 | 依赖 brain |
+| **16** | progress.py | 进度管理 | 独立 |
+| **17** | reporter.py | 报告输出 | 独立 |
+| **18** | scheduler.py | 调度引擎 | 依赖上面所有 |
 
 ---
 

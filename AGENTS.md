@@ -58,14 +58,14 @@
 
 ### 构建顺序
 
-严格按模块编号从 1 到 17 依次构建：
+严格按模块编号从 1 到 18 依次构建：
 
 ```
-阶段1（基础）：1 config → 2 logger → 3 exceptions → 4 brain
-阶段2（支撑）：5 anti_detect → 6 persistence → 7 captcha
-阶段3（业务）：8 login → 9 scanner → 10 player → 11 quiz
-阶段4（扩展）：12 notifier → 13 health → 14 plugin
-阶段5（收尾）：15 progress → 16 reporter → 17 scheduler
+阶段1（基础）：1 config → 2 tab_manager → 3 logger → 4 exceptions → 5 brain
+阶段2（支撑）：6 anti_detect → 7 persistence → 8 captcha
+阶段3（业务）：9 login → 10 scanner → 11 player → 12 quiz
+阶段4（扩展）：13 notifier → 14 health → 15 plugin
+阶段5（收尾）：16 progress → 17 reporter → 18 scheduler
 ```
 
 每个模块写完了测试通过了再写下一个。
