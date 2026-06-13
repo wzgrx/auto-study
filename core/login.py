@@ -1,13 +1,11 @@
 """
-08 - 万能登录层
+09 — 万能登录层
 支持任何网站的自动登录（已知选择器 / AI 分析）
 """
 from __future__ import annotations
 import logging
-from core.config import Config
-from core.brain import BrowserBrain
-from core.captcha import CaptchaSolver
 from core.exceptions import LoginError, retry
+from core.captcha import CaptchaSolver
 
 logger = logging.getLogger("login")
 
@@ -15,21 +13,37 @@ logger = logging.getLogger("login")
 class UniversalLogin:
     """万能登录器"""
 
-    def __init__(self, brain: BrowserBrain):
+    def __init__(self, brain, persistence):
         self.brain = brain
+        self.persist = persistence
         self.captcha = CaptchaSolver()
 
     @retry(max_attempts=3, delay=30)
-    def login(self, url: str, username: str, password: str, selectors: dict = None) -> bool:
-        """登录任意网站"""
-        tab = self.brain.get_tab(0)
-        self.brain.navigate(tab, url)
+    def login(self, tab, url: str, username: str, password: str,
+              selectors: dict = None) -> bool:
+        # 尝试恢复会话
+        domain = url.split("//")[-1].split("/")[0]
+        if self.persist.restore(tab, domain):
+            if self._check_logged_in(tab):
+                logger.info(f"{domain}: Cookie 登录成功")
+                return True
+
+        self.brain.tm.navigate(tab, url)
 
         if selectors:
-            return self._login_with_selectors(tab, username, password, selectors)
-        return self._login_with_vision(tab, username, password)
+            self._fill_form(tab, username, password, selectors)
+        else:
+            self._fill_with_vision(tab, username, password)
 
-    def _login_with_selectors(self, tab, username, password, sel) -> bool:
+        time.sleep(3)
+        if self._check_logged_in(tab):
+            self.persist.save(tab, domain)
+            logger.info(f"登录成功: {username}")
+            return True
+
+        raise LoginError(f"登录失败: {username}")
+
+    def _fill_form(self, tab, username, password, sel):
         if "username" in sel:
             self.brain.input_text(tab, sel["username"], username)
         if "password" in sel:
@@ -38,14 +52,17 @@ class UniversalLogin:
             code = self.captcha.solve(tab)
             self.brain.input_text(tab, sel["captcha_input"], code)
         self.brain.click(tab, sel.get("submit", "button[type='submit']"))
-        return self._verify(tab)
 
-    def _login_with_vision(self, tab, username, password) -> bool:
+    def _fill_with_vision(self, tab, username, password):
         analysis = self.brain.analyze_screenshot(
-            tab, "描述登录表单：用户名框、密码框、验证码、登录按钮的位置？")
-        logger.info(f"页面分析: {analysis[:200]}")
-        return False
+            tab, "描述登录表单：用户名框、密码框、验证码、登录按钮位置？")
+        logger.info(f"AI 分析页面: {analysis[:200]}")
+        # 简化的默认填充
+        self.brain.input_text(tab, "input[type='text']", username)
+        self.brain.input_text(tab, "input[type='password']", password)
+        self.brain.click(tab, "button[type='submit']")
 
-    def _verify(self, tab) -> bool:
-        text = self.brain.read_text(tab)
-        return not any(kw in text for kw in ["登录", "login", "密码错误"])
+    @staticmethod
+    def _check_logged_in(tab) -> bool:
+        text = (tab.ele("tag:body").text or "").lower()
+        return not any(kw in text for kw in ["登录", "login", "密码错误", "请输入密码"])

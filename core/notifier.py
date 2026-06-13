@@ -1,6 +1,6 @@
 """
-12 - 通知模块
-多通道通知：飞书 / 控制台 / 微信 / 邮件
+13 — 通知模块
+多通道：控制台 / 飞书 / 微信
 """
 from __future__ import annotations
 import logging
@@ -13,16 +13,13 @@ class Notifier:
     """多通道通知"""
 
     def send(self, title: str, message: str):
-        self.console(title, message)
-        if Config.FEISHU_WEBHOOK:
-            self.feishu(title, message)
-
-    def console(self, title: str, message: str):
         logger.info(f"[{title}] {message}")
+        if Config.FEISHU_WEBHOOK:
+            self._feishu(title, message)
 
-    def feishu(self, title: str, message: str):
-        import requests
+    def _feishu(self, title: str, message: str):
         try:
+            import requests
             requests.post(Config.FEISHU_WEBHOOK, json={
                 "msg_type": "text",
                 "content": {"text": f"{title}\n{message}"},

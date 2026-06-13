@@ -1,11 +1,10 @@
 """
-13 - 健康监控
-长时间运行时的健康检测、心跳、自动恢复
+14 — 健康监控
+长时间运行检测：心跳、浏览器存活、自动恢复
 """
 from __future__ import annotations
 import time
 import logging
-from core.config import Config
 
 logger = logging.getLogger("health")
 
@@ -13,20 +12,21 @@ logger = logging.getLogger("health")
 class HealthMonitor:
     """健康监控器"""
 
-    def __init__(self):
-        self._last_heartbeat = time.time()
-        self._stall_threshold = 300
+    def __init__(self, stall_sec: int = 300):
+        self._last = time.time()
+        self._stall_sec = stall_sec
 
     def heartbeat(self):
-        self._last_heartbeat = time.time()
+        self._last = time.time()
 
-    def is_alive(self) -> bool:
-        return time.time() - self._last_heartbeat < self._stall_threshold
+    @property
+    def alive(self) -> bool:
+        return time.time() - self._last < self._stall_sec
 
-    def check_browser(self, brain) -> bool:
+    def check_browser(self, tab_manager) -> bool:
         try:
-            brain.get_tab(0)
+            tab_manager.get()
             return True
-        except Exception:
-            logger.error("浏览器连接异常")
+        except Exception as e:
+            logger.error(f"浏览器异常: {e}")
             return False
