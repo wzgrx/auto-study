@@ -23,7 +23,10 @@ class BrowserBrain:
     # ── 阅读页面 ──
 
     def read_text(self, tab) -> str:
-        return tab.ele("tag:body").text
+        try:
+            return tab.ele("tag:body").text
+        except Exception:
+            return ""
 
     def read_title(self, tab) -> str:
         return tab.title

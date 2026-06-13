@@ -94,9 +94,10 @@ class TabManager:
     # ═══════════════════════════════════════════
 
     @staticmethod
-    def navigate(tab, url: str):
+    def navigate(tab, url: str, timeout: int = 15):
         """导航并等待"""
         tab.get(url)
+        # DrissionPage 自带超时，不需要额外控制
         time.sleep(3)
 
     @staticmethod
@@ -112,22 +113,20 @@ class TabManager:
     # ═══════════════════════════════════════════
 
     def _refresh_cache(self):
-        """刷新标签页缓存（删除已关闭的，添加新的）"""
+        """刷新标签页缓存"""
         try:
             all_tabs = self.browser.get_tabs()
             current_ids = {t.tab_id for t in all_tabs}
-            # 移除已关闭的
             for tid in list(self._tabs.keys()):
                 if tid not in current_ids:
                     del self._tabs[tid]
-            # 添加新的
             for t in all_tabs:
                 if t.tab_id not in self._tabs:
                     self._tabs[t.tab_id] = t
                     if self._initial_tab is None:
                         self._initial_tab = t
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"刷新标签页缓存失败: {e}")
 
     # ═══════════════════════════════════════════
     # 清理

@@ -86,17 +86,11 @@ class UniversalLogin:
 
     @staticmethod
     def _check_logged_in(tab) -> bool:
-        """判断是否已登录（URL + 页面文字双重检测）"""
         url = (tab.url or "").lower()
         text = (tab.ele("tag:body").text or "").lower()
-
-        # 如果 URL 不在登录页了 → 已登录
         if "login" not in url and "vuelogin" not in url:
             return True
-
-        # 如果页面有"退出"等关键词 → 已登录
         login_keywords = ["退出", "logout", "个人中心", "dashboard"]
         if any(kw in text for kw in login_keywords):
             return True
-
         return False
