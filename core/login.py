@@ -1,6 +1,6 @@
 """
 09 — 万能登录层
-支持任何网站的自动登录（已知选择器 / AI 分析）
+支持任何网站的自动登录：Cookie 恢复 → 填表 → 验证码重试
 """
 from __future__ import annotations
 import time
@@ -21,49 +21,82 @@ class UniversalLogin:
 
     @retry(max_attempts=3, delay=30)
     def login(self, tab, url: str, username: str, password: str,
-              selectors: dict = None) -> bool:
-        # 尝试恢复会话
+              selectors: dict = None, plugin=None) -> bool:
         domain = url.split("//")[-1].split("/")[0]
+
+        # 1. 尝试 Cookie 恢复
         if self.persist.restore(tab, domain):
+            time.sleep(2)
             if self._check_logged_in(tab):
-                logger.info(f"{domain}: Cookie 登录成功")
+                logger.info(f"✅ {domain}: Cookie 登录成功")
                 return True
 
+        # 2. 导航到登录页
         self.brain.tm.navigate(tab, url)
-
-        if selectors:
-            self._fill_form(tab, username, password, selectors)
-        else:
-            self._fill_with_vision(tab, username, password)
-
         time.sleep(3)
-        if self._check_logged_in(tab):
-            self.persist.save(tab, domain)
-            logger.info(f"登录成功: {username}")
-            return True
 
-        raise LoginError(f"登录失败: {username}")
+        # 3. 填表（最多尝试 3 次验证码）
+        for attempt in range(3):
+            self._fill_form(tab, username, password, selectors, plugin)
+            time.sleep(3)
 
-    def _fill_form(self, tab, username, password, sel):
-        if "username" in sel:
-            self.brain.input_text(tab, sel["username"], username)
-        if "password" in sel:
-            self.brain.input_text(tab, sel["password"], password)
-        if "captcha_input" in sel:
+            if self._check_logged_in(tab):
+                self.persist.save(tab, domain)
+                logger.info(f"✅ 登录成功: {username}")
+                return True
+
+            # 验证码错误 → 刷新验证码重试
+            if attempt < 2:
+                logger.warning(f"登录失败，重试验证码 ({attempt + 1}/3)")
+                self._refresh_captcha(tab, selectors)
+
+        raise LoginError(f"登录失败 ({username})")
+
+    def _fill_form(self, tab, username, password, sel, plugin=None):
+        """填表"""
+        user_sel = (sel or {}).get("username", "input.el-input__inner")
+        pass_sel = (sel or {}).get("password", "input[type='password']")
+        js_user = (plugin.login_js if plugin and hasattr(plugin, 'login_js')
+                   else {}).get("username", "")
+
+        self.brain.input_text(tab, user_sel, username, js_selector=js_user)
+        self.brain.input_text(tab, pass_sel, password)
+
+        # 验证码
+        cap_sel = (sel or {}).get("captcha_input", "")
+        if cap_sel:
             code = self.captcha.solve(tab)
-            self.brain.input_text(tab, sel["captcha_input"], code)
-        self.brain.click(tab, sel.get("submit", "button[type='submit']"))
+            if code:
+                self.brain.input_text(tab, cap_sel, code)
 
-    def _fill_with_vision(self, tab, username, password):
-        analysis = self.brain.analyze_screenshot(
-            tab, "描述登录表单：用户名框、密码框、验证码、登录按钮位置？")
-        logger.info(f"AI 分析页面: {analysis[:200]}")
-        # 简化的默认填充
-        self.brain.input_text(tab, "input[type='text']", username)
-        self.brain.input_text(tab, "input[type='password']", password)
-        self.brain.click(tab, "button[type='submit']")
+        # 点击登录
+        submit_sel = (sel or {}).get("submit", "")
+        submit_text = (plugin.login_js if plugin and hasattr(plugin, 'login_js')
+                       else {}).get("submit_text", "")
+        self.brain.click(tab, selector=submit_sel, js_text=submit_text)
+
+    def _refresh_captcha(self, tab, sel):
+        """刷新验证码"""
+        if sel and "captcha_img" in sel:
+            try:
+                tab.ele(sel["captcha_img"], timeout=3).click()
+                time.sleep(1)
+            except Exception:
+                pass
 
     @staticmethod
     def _check_logged_in(tab) -> bool:
+        """判断是否已登录（URL + 页面文字双重检测）"""
+        url = (tab.url or "").lower()
         text = (tab.ele("tag:body").text or "").lower()
-        return not any(kw in text for kw in ["登录", "login", "密码错误", "请输入密码"])
+
+        # 如果 URL 不在登录页了 → 已登录
+        if "login" not in url and "vuelogin" not in url:
+            return True
+
+        # 如果页面有"退出"等关键词 → 已登录
+        login_keywords = ["退出", "logout", "个人中心", "dashboard"]
+        if any(kw in text for kw in login_keywords):
+            return True
+
+        return False
