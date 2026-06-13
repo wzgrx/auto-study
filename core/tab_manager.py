@@ -31,7 +31,7 @@ class TabManager:
     """
 
     def __init__(self, min_pool: int = 2):
-        self.browser: Chromium = Chromium(addr=Config.CDP_PORT)
+        self.browser: Chromium = Chromium(Config.CDP_PORT)
         self._pool: dict[str, Any] = {}  # {tag: tab对象}
         self.discover()                   # 发现已有标签页
         self.ensure_min_pool(min_pool)
