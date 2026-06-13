@@ -38,14 +38,17 @@ class Scheduler:
         logger.info(f"===== 开始全自动刷课: {platform} =====")
         account = Config.get_account(platform)
         plugin = PluginRegistry.get(platform)
-        tab = self.tm.get("课程列表")
+
+        # 获取一个标签页（不新建，复用已有的）
+        tab = self.tm.get()
+        logger.info(f"使用标签页: {tab.tab_id[:16] if tab.tab_id else '?'}")
 
         # 登录
         if account and plugin:
             self.login.login(
                 tab, plugin.login_url,
                 account["user"], account["pass"],
-                plugin.login_selectors)
+                plugin.login_selectors, plugin)
 
         # 扫描课程
         courses = self.scanner.scan(tab)
@@ -56,7 +59,6 @@ class Scheduler:
         # 逐个播放
         for i, course in enumerate(courses):
             self.health.heartbeat()
-            tab = self.tm.get("视频播放")
             ok = self.player.play(tab, course)
             self.progress.save(course.id or str(i), 100 if ok else 0,
                                "完成" if ok else "失败")
