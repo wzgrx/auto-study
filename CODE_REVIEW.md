@@ -2,7 +2,30 @@
 
 对比源：旧 chinahrt 项目 cdp_connection.py | PyDoll connection_handler.py | BrowserStack docs
 
-## tab_manager.py（6个问题）
+## 模块2 完整审查结果
+
+对比源：PyDoll tab.py (2058行) + base.py + connection_handler.py
+       旧 chinahrt cdp_connection.py (225行)
+       BrowserStack smart tab handling docs
+
+### 已修复问题
+
+| # | 问题来源 | 修复内容 |
+|---|---------|---------|
+| 1 | PyDoll go_to 有 timeout+错误处理 | navigate() 加 timeout=30 参数 |
+| 2 | PyDoll 导航有 NavigationError | 新增 navigate_with_retry() SPA 自动重试 |
+| 3 | PyDoll close() 从 _tabs_opened 移除 | 新增 close_tab(tab) 单个关闭 |
+| 4 | PyDoll get_opened_tabs 同步机制 | _refresh_cache 简化逻辑，去除非必要 _initial_tab |
+| 5 | PyDoll 排除非 page 类型 | list_tabs 只展示真实标签页 |
+| 6 | 旧代码 close_extra keep_ids 可能为 None | 增加 set() 兜底 |
+
+### 不需要加的功能（PyDoll 有但 DrissionPage 已自带）
+
+| PyDoll 功能 | DrissionPage 已有 |
+|-------------|-------------------|
+| 独立的 WebSocket 连接管理 | 内部处理 |
+| 事件监听系统 | 可通过 run_js 实现 |
+| 网络拦截 | 可通过 proxy 实现 |
 
 | 行 | 问题 | 严重 | 修复方案 |
 |----|------|:----:|---------|
