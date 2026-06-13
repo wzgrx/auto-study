@@ -3,6 +3,7 @@
 支持任何网站的自动登录（已知选择器 / AI 分析）
 """
 from __future__ import annotations
+import time
 import logging
 from core.exceptions import LoginError, retry
 from core.captcha import CaptchaSolver
@@ -16,7 +17,7 @@ class UniversalLogin:
     def __init__(self, brain, persistence):
         self.brain = brain
         self.persist = persistence
-        self.captcha = CaptchaSolver()
+        self.captcha = CaptchaSolver(brain)
 
     @retry(max_attempts=3, delay=30)
     def login(self, tab, url: str, username: str, password: str,

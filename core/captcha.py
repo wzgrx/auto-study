@@ -13,6 +13,9 @@ logger = logging.getLogger("captcha")
 class CaptchaSolver:
     """验证码识别器"""
 
+    def __init__(self, brain=None):
+        self._brain = brain
+
     def solve(self, tab) -> str:
         # 策略1: ddddocr
         result = self._ocr(tab)
@@ -40,12 +43,9 @@ class CaptchaSolver:
             return ""
 
     def _vision(self, tab) -> str:
-        try:
-            from core.brain import BrowserBrain
-            brain = BrowserBrain(None)
-            return brain.analyze_screenshot(tab, "识别验证码，只输出结果")
-        except Exception:
+        if not self._brain:
             return ""
+        return self._brain.analyze_screenshot(tab, "识别验证码，只输出结果")
 
     def _manual(self, tab) -> str:
         path = tab.get_screenshot()
